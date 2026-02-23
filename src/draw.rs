@@ -2,25 +2,33 @@
 
 use image::{ImageBuffer, Rgba};
 
-/// Draw one frame: white background, black bars.
+/// Draw one frame: background (image or solid color), then bars.
 /// `bar_heights`: height per bar (0.0–1.0, assumed normalized).
-/// Spectrum is drawn in the bottom `spectrum_height` pixels with bars vertically centered.
+/// Spectrum band is placed with its bottom edge `spectrum_y_from_bottom` pixels above the frame bottom; bars are vertically centered in that band.
+#[allow(clippy::too_many_arguments)]
 pub fn draw_spectrum_frame(
     width: u32,
     height: u32,
     spectrum_height: u32,
+    spectrum_y_from_bottom: u32,
     bar_heights: &[f32],
     bar_color: [u8; 4],
     bg_color: [u8; 4],
+    bg_image: Option<&ImageBuffer<Rgba<u8>, Vec<u8>>>,
 ) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
-    let mut img = ImageBuffer::from_fn(width, height, |_, _| Rgba(bg_color));
+    let mut img = match bg_image {
+        Some(bg) => bg.clone(),
+        None => ImageBuffer::from_fn(width, height, |_, _| Rgba(bg_color)),
+    };
 
     if bar_heights.is_empty() {
         return img;
     }
 
     let usable_height = spectrum_height.saturating_sub(4);
-    let y_center = height.saturating_sub(spectrum_height / 2);
+    let y_center = height
+        .saturating_sub(spectrum_y_from_bottom)
+        .saturating_sub(spectrum_height / 2);
 
     let total_bars = bar_heights.len() as u32;
     let gap = 1u32;
@@ -30,7 +38,7 @@ pub fn draw_spectrum_frame(
     } else {
         0
     };
-    let radius = (bar_width / 2).min(4).max(1);
+    let radius = (bar_width / 2).clamp(1, 4);
     let start_x = (width.saturating_sub(total_bars * bar_width + total_gaps)) / 2;
 
     for (i, &h) in bar_heights.iter().enumerate() {

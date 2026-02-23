@@ -9,6 +9,7 @@ use std::path::PathBuf;
 use std::process::Stdio;
 
 use clap::Parser;
+use image::imageops::FilterType;
 use indicatif::{ProgressBar, ProgressStyle};
 use config::Config;
 use decode::decode_mp3;
@@ -58,6 +59,14 @@ struct Args {
     /// Background color in hex RGB (e.g. ffffff or #1a1a2e). Default: white
     #[arg(long, default_value = "ffffff", value_parser = parse_hex_color)]
     bg_color: [u8; 4],
+
+    /// Background image path (PNG/JPEG etc.). Resized to video size if needed. Overrides --bg-color when set
+    #[arg(long)]
+    bg_image: Option<PathBuf>,
+
+    /// Distance from bottom of frame to the bottom edge of the spectrum band (pixels)
+    #[arg(long, default_value_t = 0)]
+    spectrum_y_from_bottom: u32,
 }
 
 fn parse_hex_color(s: &str) -> Result<[u8; 4], String> {
@@ -98,10 +107,30 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         fps: args.fps,
         bars: args.bars,
         spectrum_height: args.spectrum_height,
+        spectrum_y_from_bottom: args.spectrum_y_from_bottom,
         bar_color: args.bar_color,
         bg_color: args.bg_color,
         ..Config::default()
     };
+
+    let bg_image: Option<image::RgbaImage> = if let Some(ref path) = args.bg_image {
+        let img = image::ImageReader::open(path)
+            .map_err(|e| format!("failed to open background image {:?}: {}", path, e))?
+            .decode()
+            .map_err(|e| format!("failed to decode background image {:?}: {}", path, e))?;
+        let rgba = img.to_rgba8();
+        let (w, h) = rgba.dimensions();
+        if w == width && h == height {
+            Some(rgba)
+        } else {
+            Some(image::imageops::resize(&rgba, width, height, FilterType::Triangle))
+        }
+    } else {
+        None
+    };
+    if args.bg_image.is_some() {
+        println!("Using background image: {:?}", args.bg_image.as_ref().unwrap());
+    }
 
     println!("Decoding MP3: {:?}", args.input);
     let decoded = decode_mp3(&args.input)?;
@@ -169,9 +198,11 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             config.width,
             config.height,
             config.spectrum_height,
+            config.spectrum_y_from_bottom,
             &bar_heights,
             config.bar_color,
             config.bg_color,
+            bg_image.as_ref(),
         );
         let path = frames_dir.join(format!("frame_{:06}.png", frame_index));
         img.save(&path)?;

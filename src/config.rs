@@ -13,6 +13,8 @@ pub struct Config {
     pub bars: usize,
     /// Spectrum area height (pixels).
     pub spectrum_height: u32,
+    /// Distance from bottom of frame to the bottom edge of the spectrum band (pixels).
+    pub spectrum_y_from_bottom: u32,
     /// FFT window size (number of samples).
     pub fft_size: usize,
     /// Overlap ratio (0.0–1.0, e.g. 0.5 = 50%).
@@ -31,6 +33,7 @@ impl Default for Config {
             fps: 30,
             bars: 128,
             spectrum_height: 200,
+            spectrum_y_from_bottom: 0,
             fft_size: 2048,
             overlap: 0.5,
             bar_color: [0, 0, 0, 255],
