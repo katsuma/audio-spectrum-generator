@@ -129,7 +129,7 @@ mod tests {
         let n = 16;
         for i in 0..n {
             let w = hann_window(i, n);
-            assert!(w >= 0.0 && w <= 1.0, "hann_window({}, {}) = {} out of [0,1]", i, n, w);
+            assert!((0.0..=1.0).contains(&w), "hann_window({}, {}) = {} out of [0,1]", i, n, w);
         }
     }
 
@@ -182,7 +182,7 @@ mod tests {
         let samples: Vec<f32> = (0..8192).map(|i| 0.01 * (i as f32 * 0.1).sin()).collect();
         let (frames, global_max) =
             compute_all_spectrums(&samples, 44100, 30, 2048, 0.5, 16);
-        let hop = (2048 as f32 * 0.5) as usize;
+        let hop = (2048_f32 * 0.5) as usize;
         let expected_frames = (8192usize.saturating_sub(2048).saturating_add(hop)) / hop;
         assert_eq!(frames.len(), expected_frames);
         for f in &frames {
