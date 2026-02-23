@@ -5,12 +5,14 @@ use image::{ImageBuffer, Rgba};
 /// Draw one frame: background (image or solid color), then bars.
 /// `bar_heights`: height per bar (0.0–1.0, assumed normalized).
 /// Spectrum band is placed with its bottom edge `spectrum_y_from_bottom` pixels above the frame bottom; bars are vertically centered in that band.
+/// When `spectrum_width` is Some(w), the bar strip is w pixels wide and centered horizontally; when None, it spans the full frame width.
 #[allow(clippy::too_many_arguments)]
 pub fn draw_spectrum_frame(
     width: u32,
     height: u32,
     spectrum_height: u32,
     spectrum_y_from_bottom: u32,
+    spectrum_width: Option<u32>,
     bar_heights: &[f32],
     bar_color: [u8; 4],
     bg_color: [u8; 4],
@@ -33,8 +35,9 @@ pub fn draw_spectrum_frame(
     let total_bars = bar_heights.len() as u32;
     let gap = 1u32;
     let total_gaps = total_bars.saturating_sub(1) * gap;
-    let bar_width = if total_bars > 0 {
-        (width.saturating_sub(total_gaps)) / total_bars
+    let strip_width = spectrum_width.unwrap_or(width).min(width);
+    let bar_width = if total_bars > 0 && strip_width > total_gaps {
+        (strip_width - total_gaps) / total_bars
     } else {
         0
     };

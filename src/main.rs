@@ -67,6 +67,10 @@ struct Args {
     /// Distance from bottom of frame to the bottom edge of the spectrum band (pixels)
     #[arg(long, default_value_t = 0)]
     spectrum_y_from_bottom: u32,
+
+    /// Horizontal width of the spectrum band (pixels). Centered. When not set, uses full frame width
+    #[arg(long)]
+    spectrum_width: Option<u32>,
 }
 
 fn parse_hex_color(s: &str) -> Result<[u8; 4], String> {
@@ -108,6 +112,7 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         bars: args.bars,
         spectrum_height: args.spectrum_height,
         spectrum_y_from_bottom: args.spectrum_y_from_bottom,
+        spectrum_width: args.spectrum_width,
         bar_color: args.bar_color,
         bg_color: args.bg_color,
         ..Config::default()
@@ -199,6 +204,7 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             config.height,
             config.spectrum_height,
             config.spectrum_y_from_bottom,
+            config.spectrum_width,
             &bar_heights,
             config.bar_color,
             config.bg_color,
