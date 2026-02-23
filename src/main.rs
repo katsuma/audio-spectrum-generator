@@ -50,6 +50,25 @@ struct Args {
     /// Spectrum area height (pixels)
     #[arg(long, default_value_t = 200)]
     spectrum_height: u32,
+
+    /// Bar color in hex RGB (e.g. 000000 or #ff6600). Default: black
+    #[arg(long, default_value = "000000", value_parser = parse_hex_color)]
+    bar_color: [u8; 4],
+
+    /// Background color in hex RGB (e.g. ffffff or #1a1a2e). Default: white
+    #[arg(long, default_value = "ffffff", value_parser = parse_hex_color)]
+    bg_color: [u8; 4],
+}
+
+fn parse_hex_color(s: &str) -> Result<[u8; 4], String> {
+    let s = s.strip_prefix('#').unwrap_or(s);
+    if s.len() != 6 {
+        return Err(format!("color must be 6 hex digits (e.g. ff6600), got {:?}", s));
+    }
+    let r = u8::from_str_radix(&s[0..2], 16).map_err(|_| format!("invalid hex in color: {:?}", s))?;
+    let g = u8::from_str_radix(&s[2..4], 16).map_err(|_| format!("invalid hex in color: {:?}", s))?;
+    let b = u8::from_str_radix(&s[4..6], 16).map_err(|_| format!("invalid hex in color: {:?}", s))?;
+    Ok([r, g, b, 255])
 }
 
 fn parse_resolution(s: &str) -> Result<(u32, u32), String> {
@@ -79,6 +98,8 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         fps: args.fps,
         bars: args.bars,
         spectrum_height: args.spectrum_height,
+        bar_color: args.bar_color,
+        bg_color: args.bg_color,
         ..Config::default()
     };
 
@@ -121,8 +142,6 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("Writing WAV: {:?}", wav_path);
     write_wav(&wav_path, &decoded.samples, decoded.sample_rate)?;
 
-    let bar_color = [0u8, 0, 0, 255];
-    let bg_color = [255u8, 255, 255, 255];
     let norm = if global_max > 0.0 { global_max } else { 1.0 };
 
     let default_heights = vec![0.0; config.bars];
@@ -151,8 +170,8 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             config.height,
             config.spectrum_height,
             &bar_heights,
-            bar_color,
-            bg_color,
+            config.bar_color,
+            config.bg_color,
         );
         let path = frames_dir.join(format!("frame_{:06}.png", frame_index));
         img.save(&path)?;
