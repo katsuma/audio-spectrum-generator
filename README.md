@@ -25,6 +25,9 @@ cargo run --release -- input.mp3 -o output.mp4 --resolution 1280x720
 
 # Other options
 cargo run --release -- input.mp3 -o output.mp4 --fps 30 --bars 128 --spectrum-height 200
+
+# Custom colors (orange bars on dark background)
+cargo run --release -- input.mp3 -o output.mp4 --bar-color ff6600 --bg-color 1a1a2e
 ```
 
 ### Options
@@ -38,6 +41,8 @@ cargo run --release -- input.mp3 -o output.mp4 --fps 30 --bars 128 --spectrum-he
 | `--fps` | Frame rate | 30 |
 | `--bars` | Number of spectrum bars | 128 |
 | `--spectrum-height` | Spectrum area height (pixels) | 200 |
+| `--bar-color` | Bar color as hex RGB (e.g. `ff6600` or `#ff6600`) | `000000` (black) |
+| `--bg-color` | Background color as hex RGB (e.g. `1a1a2e` or `#ffffff`) | `ffffff` (white) |
 
 16:9 aspect ratio is recommended (e.g. 1920x1080, 1280x720).
 
