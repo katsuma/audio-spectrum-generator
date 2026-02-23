@@ -133,8 +133,8 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     } else {
         None
     };
-    if args.bg_image.is_some() {
-        println!("Using background image: {:?}", args.bg_image.as_ref().unwrap());
+    if let Some(ref path) = args.bg_image {
+        println!("Using background image: {:?}", path);
     }
 
     println!("Decoding MP3: {:?}", args.input);
@@ -269,13 +269,11 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                     .take_while(|c| c.is_ascii_digit() || *c == ' ')
                     .filter(|c| *c != ' ')
                     .collect();
-                if !num_str.is_empty() {
-                    if let Ok(n) = num_str.parse::<u64>() {
-                        let pos = n.min(total);
-                        if pos > last_pos {
-                            last_pos = pos;
-                            pb.set_position(pos);
-                        }
+                if let Ok(n) = num_str.parse::<u64>() {
+                    let pos = n.min(total);
+                    if pos > last_pos {
+                        last_pos = pos;
+                        pb.set_position(pos);
                     }
                 }
             }
