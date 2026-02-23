@@ -133,8 +133,8 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     } else {
         None
     };
-    if args.bg_image.is_some() {
-        println!("Using background image: {:?}", args.bg_image.as_ref().unwrap());
+    if let Some(ref path) = args.bg_image {
+        println!("Using background image: {:?}", path);
     }
 
     println!("Decoding MP3: {:?}", args.input);
@@ -269,13 +269,11 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                     .take_while(|c| c.is_ascii_digit() || *c == ' ')
                     .filter(|c| *c != ' ')
                     .collect();
-                if !num_str.is_empty() {
-                    if let Ok(n) = num_str.parse::<u64>() {
-                        let pos = n.min(total);
-                        if pos > last_pos {
-                            last_pos = pos;
-                            pb.set_position(pos);
-                        }
+                if let Ok(n) = num_str.parse::<u64>() {
+                    let pos = n.min(total);
+                    if pos > last_pos {
+                        last_pos = pos;
+                        pb.set_position(pos);
                     }
                 }
             }
@@ -294,4 +292,81 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     println!("Done: {:?}", args.output);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{parse_hex_color, parse_resolution};
+
+    #[test]
+    fn parse_hex_color_with_hash() {
+        let got = parse_hex_color("#ff6600").unwrap();
+        assert_eq!(got, [255, 102, 0, 255]);
+    }
+
+    #[test]
+    fn parse_hex_color_without_hash() {
+        let got = parse_hex_color("000000").unwrap();
+        assert_eq!(got, [0, 0, 0, 255]);
+    }
+
+    #[test]
+    fn parse_hex_color_white() {
+        let got = parse_hex_color("ffffff").unwrap();
+        assert_eq!(got, [255, 255, 255, 255]);
+    }
+
+    #[test]
+    fn parse_hex_color_too_short() {
+        let err = parse_hex_color("ff00").unwrap_err();
+        assert!(err.contains("6 hex digits"));
+    }
+
+    #[test]
+    fn parse_hex_color_too_long() {
+        let err = parse_hex_color("1234567").unwrap_err();
+        assert!(err.contains("6 hex digits"));
+    }
+
+    #[test]
+    fn parse_hex_color_invalid_char() {
+        let err = parse_hex_color("ff00gg").unwrap_err();
+        assert!(err.contains("invalid hex"));
+    }
+
+    #[test]
+    fn parse_resolution_ok() {
+        let got = parse_resolution("1920x1080").unwrap();
+        assert_eq!(got, (1920, 1080));
+    }
+
+    #[test]
+    fn parse_resolution_with_spaces() {
+        let got = parse_resolution(" 640 x 480 ").unwrap();
+        assert_eq!(got, (640, 480));
+    }
+
+    #[test]
+    fn parse_resolution_zero_width() {
+        let err = parse_resolution("0x1080").unwrap_err();
+        assert!(err.contains("positive"));
+    }
+
+    #[test]
+    fn parse_resolution_zero_height() {
+        let err = parse_resolution("1920x0").unwrap_err();
+        assert!(err.contains("positive"));
+    }
+
+    #[test]
+    fn parse_resolution_invalid_format() {
+        let err = parse_resolution("1920").unwrap_err();
+        assert!(err.contains("WIDTHxHEIGHT"));
+    }
+
+    #[test]
+    fn parse_resolution_invalid_number() {
+        let err = parse_resolution("axb").unwrap_err();
+        assert!(err.contains("invalid"));
+    }
 }

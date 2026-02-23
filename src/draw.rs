@@ -127,3 +127,64 @@ fn point_in_rounded_rect(px: u32, py: u32, x0: u32, y0: u32, w: u32, h: u32, r: 
     }
     false
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{draw_spectrum_frame, point_in_rounded_rect};
+
+    #[test]
+    fn point_in_rounded_rect_r0_inside() {
+        assert!(point_in_rounded_rect(10, 10, 0, 0, 20, 20, 0));
+        assert!(point_in_rounded_rect(19, 19, 0, 0, 20, 20, 0));
+    }
+
+    #[test]
+    fn point_in_rounded_rect_r0_outside() {
+        assert!(!point_in_rounded_rect(20, 10, 0, 0, 20, 20, 0));
+        assert!(!point_in_rounded_rect(10, 20, 0, 0, 20, 20, 0));
+        assert!(!point_in_rounded_rect(5, 5, 10, 10, 20, 20, 0));
+    }
+
+    #[test]
+    fn point_in_rounded_rect_r1_corner_inside() {
+        let x0 = 10;
+        let y0 = 10;
+        let w = 20;
+        let h = 20;
+        let r = 2;
+        assert!(point_in_rounded_rect(x0 + 1, y0 + 1, x0, y0, w, h, r));
+        assert!(point_in_rounded_rect(x0 + w - 2, y0 + 1, x0, y0, w, h, r));
+    }
+
+    #[test]
+    fn point_in_rounded_rect_r1_center_rect() {
+        assert!(point_in_rounded_rect(15, 15, 10, 10, 20, 20, 2));
+    }
+
+    #[test]
+    fn draw_spectrum_frame_empty_bars_returns_unchanged_size() {
+        let img = draw_spectrum_frame(100, 50, 20, 0, None, &[], [0, 0, 0, 255], [255, 255, 255, 255], None);
+        assert_eq!(img.dimensions(), (100, 50));
+    }
+
+    #[test]
+    fn draw_spectrum_frame_dimensions_match() {
+        let heights = vec![0.5f32; 8];
+        let img = draw_spectrum_frame(64, 32, 16, 0, None, &heights, [0, 0, 0, 255], [255, 255, 255, 255], None);
+        assert_eq!(img.dimensions(), (64, 32));
+    }
+
+    #[test]
+    fn draw_spectrum_frame_all_zeros_no_bar_pixels() {
+        let heights = vec![0.0f32; 4];
+        let img = draw_spectrum_frame(40, 20, 10, 0, None, &heights, [0, 0, 0, 255], [255, 255, 255, 255], None);
+        assert_eq!(img.dimensions(), (40, 20));
+        let bg = [255u8, 255, 255, 255];
+        for y in 0..20 {
+            for x in 0..40 {
+                let p = img.get_pixel(x, y);
+                assert_eq!(p.0, bg, "pixel ({}, {}) should be bg", x, y);
+            }
+        }
+    }
+}
