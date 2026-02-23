@@ -28,6 +28,15 @@ cargo run --release -- input.mp3 -o output.mp4 --fps 30 --bars 128 --spectrum-he
 
 # Custom colors (orange bars on dark background)
 cargo run --release -- input.mp3 -o output.mp4 --bar-color ff6600 --bg-color 1a1a2e
+
+# Background image with spectrum overlay (e.g. illustration)
+cargo run --release -- input.mp3 -o output.mp4 --bg-image background.png
+
+# Adjust spectrum position (distance from bottom) and bar height
+cargo run --release -- input.mp3 -o output.mp4 --bg-image background.png --spectrum-y-from-bottom 80 --spectrum-height 120
+
+# Limit spectrum width (centered; independent of resolution)
+cargo run --release -- input.mp3 -o output.mp4 --bg-image background.png --spectrum-width 1152
 ```
 
 ### Options
@@ -41,8 +50,11 @@ cargo run --release -- input.mp3 -o output.mp4 --bar-color ff6600 --bg-color 1a1
 | `--fps` | Frame rate | 30 |
 | `--bars` | Number of spectrum bars | 128 |
 | `--spectrum-height` | Spectrum area height (pixels) | 200 |
+| `--spectrum-y-from-bottom` | Distance from bottom to the spectrum band (pixels) | 0 |
+| `--spectrum-width` | Horizontal width of the spectrum band (pixels). Centered. Omit to use full frame width | - |
 | `--bar-color` | Bar color as hex RGB (e.g. `ff6600` or `#ff6600`) | `000000` (black) |
 | `--bg-color` | Background color as hex RGB (e.g. `1a1a2e` or `#ffffff`) | `ffffff` (white) |
+| `--bg-image` | Background image path (PNG/JPEG etc.); resized to video size. Overrides `--bg-color` when set | - |
 
 16:9 aspect ratio is recommended (e.g. 1920x1080, 1280x720).
 
