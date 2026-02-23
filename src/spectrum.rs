@@ -117,3 +117,80 @@ pub fn compute_all_spectrums(
 
     (frame_spectrums, global_max)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        aggregate_bins_to_bars_log, compute_all_spectrums, compute_spectrum_frame, hann_window,
+    };
+
+    #[test]
+    fn hann_window_range() {
+        let n = 16;
+        for i in 0..n {
+            let w = hann_window(i, n);
+            assert!(w >= 0.0 && w <= 1.0, "hann_window({}, {}) = {} out of [0,1]", i, n, w);
+        }
+    }
+
+    #[test]
+    fn hann_window_ends_non_zero() {
+        let n = 8;
+        let first = hann_window(0, n);
+        let last = hann_window(n - 1, n);
+        assert!(first > 0.0 && last > 0.0);
+    }
+
+    #[test]
+    fn aggregate_bins_to_bars_log_empty_magnitudes() {
+        let out = aggregate_bins_to_bars_log(44100, 2048, &[], 128);
+        assert_eq!(out.len(), 128);
+        assert!(out.iter().all(|&x| x == 0.0));
+    }
+
+    #[test]
+    fn aggregate_bins_to_bars_log_zero_bars() {
+        let out = aggregate_bins_to_bars_log(44100, 2048, &[1.0, 2.0, 3.0], 0);
+        assert!(out.is_empty());
+    }
+
+    #[test]
+    fn aggregate_bins_to_bars_log_returns_bars_count() {
+        let mut mags = vec![0.0f32; 1025]; // half of 2048 + 1
+        mags[10] = 1.0;
+        let out = aggregate_bins_to_bars_log(44100, 2048, &mags, 32);
+        assert_eq!(out.len(), 32);
+    }
+
+    #[test]
+    fn compute_spectrum_frame_insufficient_samples_returns_zeros() {
+        let samples = vec![0.1f32; 100];
+        let out = compute_spectrum_frame(&samples, 44100, 0, 30, 2048, 0.5, 64);
+        assert_eq!(out.len(), 64);
+        assert!(out.iter().all(|&x| x == 0.0));
+    }
+
+    #[test]
+    fn compute_spectrum_frame_enough_samples_returns_bars_len() {
+        let samples: Vec<f32> = (0..4096).map(|i| 0.001 * (i as f32).sin()).collect();
+        let out = compute_spectrum_frame(&samples, 44100, 0, 30, 2048, 0.5, 32);
+        assert_eq!(out.len(), 32);
+    }
+
+    #[test]
+    fn compute_all_spectrums_frame_count_and_global_max() {
+        let samples: Vec<f32> = (0..8192).map(|i| 0.01 * (i as f32 * 0.1).sin()).collect();
+        let (frames, global_max) =
+            compute_all_spectrums(&samples, 44100, 30, 2048, 0.5, 16);
+        let hop = (2048 as f32 * 0.5) as usize;
+        let expected_frames = (8192usize.saturating_sub(2048).saturating_add(hop)) / hop;
+        assert_eq!(frames.len(), expected_frames);
+        for f in &frames {
+            assert_eq!(f.len(), 16);
+        }
+        assert!(global_max >= 0.0);
+        if global_max > 0.0 {
+            assert!(global_max.is_finite());
+        }
+    }
+}
